@@ -1,4 +1,4 @@
-const Role = require('../utils/Role');
+const Role = require('../lib/Role');
 
 //first test
 test('creates an role object', () => {

@@ -1,4 +1,4 @@
-const Department = require('../utils/Department');
+const Department = require('../lib/Department');
 
 //first test
 test('creates an department object', () => {

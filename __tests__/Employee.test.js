@@ -1,12 +1,8 @@
-const Employee = require('../utils/Employee');
+const Employee = require('../lib/Employee');
 
 //first test
 test('creates an employee object', () => {
-    // const employee = new Employee('Claire', 'Cashmore', 1, 2);
-    // expect(employee.first_name).toBe('Claire');
-    // expect(employee.last_name).toBe('Cashmore');
-    // expect(employee.role_id).toEqual(expect.any(Number));
-    // expect(employee.manager_id).toEqual(expect.any(Number));
+   
     const employee = new Employee();
 
 
