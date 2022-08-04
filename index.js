@@ -39,9 +39,11 @@ const chooseAction = (action) => {
         case 'Quit': 
             break;
     }
-
+   
    
 }
+
+//Function to view all current employees
 function viewAllEmployees() {
     db.query(`SELECT * FROM employee`, (err, result) => {
         if(err) {
@@ -49,13 +51,15 @@ function viewAllEmployees() {
         }
         
         console.table(result);
-        
+        promptUser()
+        .then(action => {
+            return chooseAction(action);
+        })
     });
-    promptUser()
-    .then(action => {
-        return chooseAction(action);
-    })
+    
 }
+
+//Function to add a new employee
 function addEmployee() {
     // get first and last name
     inquirer.prompt([
@@ -141,7 +145,10 @@ function addEmployee() {
                                 throw err;
                             }
                             console.log('Success in adding employee');
-                            viewAllEmployees();
+                            promptUser()
+                            .then(action => {
+                                return chooseAction(action);
+                            })
                         })
                     })
                 })
