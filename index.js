@@ -1,4 +1,7 @@
 const inquirer = require('inquirer');
+const db = require('./db/connection'); 
+const consoleTable =  require('console.table');
+
 
 const promptUser = () => {
     return inquirer.prompt([
@@ -17,9 +20,10 @@ const chooseAction = (action) => {
 
     switch(choice){
         case 'View All Employees':
-            
+            viewAllEmployees();
             break;
         case 'Add Employee':
+
             break;
         case  'Update Employee Role':
             break;
@@ -35,7 +39,20 @@ const chooseAction = (action) => {
 
 
 }
+function viewAllEmployees() {
+    db.query(`SELECT * FROM employee`, (err, result) => {
+        if(err) {
+            throw err;
+        }
+        
+        console.table(result);
+        return;
+    });
+    
+}
 
+
+// Invoke function
 promptUser()
     .then(action => {
         return chooseAction(action);
