@@ -1,7 +1,9 @@
 const inquirer = require('inquirer');
 const db = require('./db/connection'); 
 const consoleTable =  require('console.table');
+const { choices } = require('yargs');
 
+let quit = false;
 
 
 const promptUser = () => {
@@ -27,16 +29,20 @@ const chooseAction = (action) => {
             addEmployee();
             break;
         case  'Update Employee Role':
+            updateEmployeeRole();
             break;
         case 'View All Roles':
             viewAllRoles();
             break;
         case 'Add Role': 
+            addRole();
             break;
         case 'View All Departments':
             viewAllDepartments();
             break;
         case 'Quit': 
+            console.log('Goodbye!');
+            quit = true;
             break;
     }
    
@@ -156,9 +162,66 @@ function addEmployee() {
         }) 
     })
 }
+//function to update an employee
+function updateEmployeeRole(){
+    db.query(`SELECT * FROM employee`, (err, result) => {
+        if(err){
+            throw err;
+        }
+        employeeData = result.map(({ first_name, last_name, id }) =>
+        ({
+            name: `${first_name} ${last_name}`,
+            value: id
+        })
+        )
+        // SELECT your desired employee
+        inquirer.prompt([
+            {
+                type: 'list',
+                name: 'employee',
+                message: 'Which employee would you like to update?: ',
+                choices: employeeData
+            }
+        ])
+        .then(employeeChoice => {
+            const params = [employeeChoice.employee];
+            // SELECT your desired employee role
+            db.query(`SELECT roles.id, roles.title FROM roles`, (err, result) => {
+                //Destructuring titles to pull out the id and title
+                const titles = result.map(({ title, id }) => ({
+                    name: title,
+                    value: id
+                }));
+                //Prompt for role
+                inquirer.prompt([
+                    {
+                    type: 'list',
+                    name: 'role',
+                    message: 'What is the new role?: ',
+                    choices: titles
+                    }
+                ])
+                .then(roleChoice => {
+                    params.push(roleChoice.role);
+                    const paramOrder = [params[1],params[0]];
+                    db.query(`UPDATE employee SET role_id = ? WHERE id =?`, paramOrder,(err) => {
+                        if(err){
+                            throw err;
+                        }
+                        console.log('Success in updating employee');
+                        promptUser()
+                            .then(action => {
+                                return chooseAction(action);
+                            })
+                    
+                    })
+                })
+            })
+        })
+    })
+}
 
-
-
+//function to view all roles
 function viewAllRoles() {
     db.query(`SELECT * FROM roles`, (err, result) => {
         if(err) {
@@ -166,13 +229,79 @@ function viewAllRoles() {
         }
         
         console.table(result);
-        
+        promptUser()
+        .then(action => {
+            return chooseAction(action);
+        })
     });
-    promptUser()
-    .then(action => {
-        return chooseAction(action);
+   
+}
+
+//function to add a role
+function addRole() {
+    inquirer.prompt([
+        {
+            type: 'text',
+            name: 'title',
+            message: 'What is the title of this role?: ',
+            validate: input=> {
+                if(input){
+                    return true;
+                } else {
+                    console.log('Please provide an input!');
+                    return false;
+                }
+            }
+        },
+        {
+            type: 'number',
+            name: 'salary',
+            message: 'What is the salary of this role?: ',
+            validate: input=> {
+                if(input){
+                    return true;
+                } else {
+                    console.log('Please provide an input!');
+                    return false;
+                }
+            }
+        }
+    ])
+    .then(answer => {
+        const params = [answer.title, answer.salary];
+        db.query(`SELECT * FROM department`, (err, result) => {
+            const departmentData = result.map(({ id, name }) => ({
+                name: name,
+                value: id
+            }))
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'department',
+                    message: 'Which department does it belong?: ',
+                    choices: departmentData
+                }
+            ])
+            .then(departmentChoice => {
+                params.push(departmentChoice.department);
+                db.query(`INSERT INTO roles (title, salary, department_id)
+                VALUES(?,?,?)`,params, (err) => {
+                    if(err){
+                        throw err;
+                    }
+                    console.log('Successful addition of role')
+                    viewAllRoles();
+                    promptUser()
+                            .then(action => {
+                                return chooseAction(action);
+                            })
+                })
+            })
+        })
     })
 }
+
+//Function to view all departments (ALL PRESET, no new departments)
 function viewAllDepartments() {
     db.query(`SELECT * FROM department`, (err, result) => {
         if(err) {
@@ -180,17 +309,20 @@ function viewAllDepartments() {
         }
         
         console.table(result);
-        
+        promptUser()
+        .then(action => {
+            return chooseAction(action);
+        })
     });
-    promptUser()
-    .then(action => {
-        return chooseAction(action);
-    })
+    
 }
 
 
 // Invoke function
 promptUser()
     .then(action => {
+        // PROBLEM: this promise is never resolved, node.js is still looking for other functions?
         return chooseAction(action);
     })
+
+
