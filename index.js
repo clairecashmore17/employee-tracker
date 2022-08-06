@@ -40,10 +40,12 @@ const chooseAction = (action) => {
         case 'View All Departments':
             viewAllDepartments();
             break;
+        case 'Add Departments':
+            addDepartment();
+            break;
         case 'Quit': 
             console.log('Goodbye!');
-            quit = true;
-            break;
+            process.exit();
     }
    
    
@@ -51,7 +53,13 @@ const chooseAction = (action) => {
 
 //Function to view all current employees
 function viewAllEmployees() {
-    db.query(`SELECT * FROM employee`, (err, result) => {
+    // LEFT JOIN all of the tables
+    db.query(`SELECT employee.id, employee.first_name as 'First Name',employee.last_name as 'Last Name', roles.title, department.dep_name as department, manager.first_name as manager, roles.salary
+    FROM employee 
+    LEFT JOIN roles ON employee.role_id = roles.id
+	LEFT JOIN department ON roles.department_id = department.id
+    LEFT JOIN employee manager on employee.manager_id = manager.id
+    ORDER BY employee.id DESC`, (err, result) => {
         if(err) {
             throw err;
         }
@@ -192,7 +200,7 @@ function updateEmployeeRole(){
                     name: title,
                     value: id
                 }));
-                //Prompt for role
+                //Prompt for new role
                 inquirer.prompt([
                     {
                     type: 'list',
@@ -203,6 +211,7 @@ function updateEmployeeRole(){
                 ])
                 .then(roleChoice => {
                     params.push(roleChoice.role);
+                    //re-order the params so it fits the SQL query
                     const paramOrder = [params[1],params[0]];
                     db.query(`UPDATE employee SET role_id = ? WHERE id =?`, paramOrder,(err) => {
                         if(err){
@@ -214,6 +223,7 @@ function updateEmployeeRole(){
                                 return chooseAction(action);
                             })
                     
+
                     })
                 })
             })
@@ -301,7 +311,7 @@ function addRole() {
     })
 }
 
-//Function to view all departments (ALL PRESET, no new departments)
+//Function to view all departments
 function viewAllDepartments() {
     db.query(`SELECT * FROM department`, (err, result) => {
         if(err) {
@@ -316,12 +326,45 @@ function viewAllDepartments() {
     });
     
 }
+function addDepartment() {
+    inquirer.prompt([
+        {
+            type: 'text',
+            name: 'department',
+            message: 'What is the name of the new Department?: ',
+            validate: input=> {
+                if(input){
+                    return true;
+                } else {
+                    console.log('Please provide an input!');
+                    return false;
+                }
+            }
+        }
+    ])
+    .then( answer => {
+        const param = answer.department;
+
+        //Create new department to table with params
+        db.query(`INSERT INTO department (name)
+        VALUES(?)`, param, (err)=> {
+            if(err){
+                throw err;
+            }
+            console.log('Successfully added department with new ID');
+            promptUser()
+            .then(action => {
+                return chooseAction(action);
+            })
+        })
+    })
+}
 
 
 // Invoke function
 promptUser()
     .then(action => {
-        // PROBLEM: this promise is never resolved, node.js is still looking for other functions?
+        
         return chooseAction(action);
     })
 

@@ -9,7 +9,7 @@ DROP TABLE IF EXISTS department;
 -- Department table creation
 CREATE TABLE department (
     id INTEGER AUTO_INCREMENT  PRIMARY KEY,
-    name VARCHAR(30) NOT NULL
+    dep_name VARCHAR(30) NOT NULL
 );
 
 

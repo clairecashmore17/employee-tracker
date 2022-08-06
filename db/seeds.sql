@@ -1,5 +1,5 @@
 -- Populate Departments
-INSERT INTO department (name)
+INSERT INTO department (dep_name)
 VALUES
 ('Management'),
 ('Graphic Design'),
