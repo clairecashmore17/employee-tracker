@@ -12,7 +12,7 @@ const promptUser = () => {
             type: 'list',
             name: 'action',
             message: 'What would you like to do?',
-            choices: ['View All Employees', 'Add Employee', 'Update Employee Role', 'View All Roles', 'Add Role', 'View All Departments', 'Add Departments', 'Quit']
+            choices: ['View All Employees','View Employees by Department', 'Add Employee', 'Update Employee Role','Change Employee Manager','Delete Employee', 'View All Roles', 'Add Role', 'View All Departments', 'Add Departments', 'Quit']
         }
     ]);
 };
@@ -25,11 +25,20 @@ const chooseAction = (action) => {
         case 'View All Employees':
             viewAllEmployees();
             break;
+        case 'View Employees by Department':
+            viewEmployeesByDepartment();
+            break;    
         case 'Add Employee':
             addEmployee();
             break;
         case  'Update Employee Role':
             updateEmployeeRole();
+            break;
+        case 'Change Employee Manager':
+            updateManager();
+            break;    
+        case 'Delete Employee':
+            deleteEmployee();
             break;
         case 'View All Roles':
             viewAllRoles();
@@ -72,7 +81,45 @@ function viewAllEmployees() {
     });
     
 }
-
+// Function to view employees by department
+function viewEmployeesByDepartment() {
+     // Not sure how to SQL this
+    // db.query(``, (err, result) => {
+    //     if(err){
+    //         throw err;
+    //     }
+    //     const departmentData = result.map(({ id, name }) => ({
+    //         name: name,
+    //         value: id
+    //     }))
+    //     inquirer.prompt([
+    //         {
+    //             type: 'list',
+    //             name: 'department',
+    //             message: 'Which department do you want to view?: ',
+    //             choices: departmentData
+    //         }
+    //     ])
+    //     .then(departmentChoice => {
+    //         const param = departmentChoice.department;
+    //         db.query()
+    //     })
+        
+    // })
+    db.query(`SELECT employee.first_name, employee.last_name, department.dep_name as Department
+            FROM employee
+            LEFT JOIN roles ON employee.role_id = roles.id
+            LEFT JOIN Department ON roles.department_id = department.id`, (err, result) => {
+        if(err){
+            throw err;
+        }
+        console.table(result);
+        promptUser()
+        .then(action => {
+            return chooseAction(action);
+        })
+    })
+}
 //Function to add a new employee
 function addEmployee() {
     // get first and last name
@@ -230,6 +277,105 @@ function updateEmployeeRole(){
         })
     })
 }
+
+//function to change an employee manager
+function updateManager(){
+    db.query(`SELECT * FROM employee`, (err, result) => {
+        if(err){
+            throw err;
+        }
+        employeeData = result.map(({ first_name, last_name, id }) =>
+        ({
+            name: `${first_name} ${last_name}`,
+            value: id
+        })
+        )
+        // SELECT your desired employee
+        inquirer.prompt([
+            {
+                type: 'list',
+                name: 'employee',
+                message: 'Which employee would you like to update?: ',
+                choices: employeeData
+            }
+        ])
+        .then(employeeChoice => {
+            const params = [employeeChoice.employee];
+            db.query(`SELECT * FROM employee`, (err, result) => {
+                if(err){
+                    throw err;
+                }
+                managerData = result.map(({ first_name, last_name, id }) =>
+                ({
+                    name: `${first_name} ${last_name}`,
+                    value: id
+                }));
+                // SELECT your desired manager
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'manager',
+                    message: 'Which manager would you like to assign?: ',
+                    choices: managerData
+                }
+            ])
+            .then(managerChoice => {
+                params.push(managerChoice.manager);
+                const paramOrder = [params[1], params[0]];
+                db.query(`UPDATE employee SET manager_id = ? WHERE id =?`, paramOrder,(err,result) =>{
+                    if(err) {
+                        throw err;
+                    }
+                    console.log('Successfully updated employee manager');
+                    promptUser()
+                            .then(action => {
+                                return chooseAction(action);
+                            })
+                })
+            })
+            })
+        })
+    })
+}
+
+//function to delete an employee
+function deleteEmployee() {
+    db.query(`SELECT * FROM employee`, (err, result) => {
+        if(err){
+            throw err;
+        }
+        employeeData = result.map(({ first_name, last_name, id }) =>
+        ({
+            name: `${first_name} ${last_name}`,
+            value: id
+        })
+        )
+        // SELECT your desired employee
+        inquirer.prompt([
+            {
+                type: 'list',
+                name: 'employee',
+                message: 'Which employee would you like to update?: ',
+                choices: employeeData
+            }
+        ])
+        .then(employeeChoice => {
+            const params = [employeeChoice.employee];
+           
+            db.query(`DELETE FROM employee WHERE id =?`, params,(err) => {
+                if(err){
+                    throw err;
+                }
+                console.log('Success in deleting employee');
+                promptUser()
+                    .then(action => {
+                        return chooseAction(action);
+                    })
+            })
+        })
+    })
+}
+
 
 //function to view all roles
 function viewAllRoles() {
