@@ -1,10 +1,6 @@
 const inquirer = require('inquirer');
 const db = require('./db/connection'); 
 const consoleTable =  require('console.table');
-const { choices } = require('yargs');
-
-let quit = false;
-
 
 const promptUser = () => {
     return inquirer.prompt([
@@ -426,8 +422,8 @@ function addRole() {
     .then(answer => {
         const params = [answer.title, answer.salary];
         db.query(`SELECT * FROM department`, (err, result) => {
-            const departmentData = result.map(({ id, name }) => ({
-                name: name,
+            const departmentData = result.map(({ dep_name, id }) => ({
+                name: dep_name,
                 value: id
             }))
             inquirer.prompt([
@@ -492,7 +488,7 @@ function addDepartment() {
         const param = answer.department;
 
         //Create new department to table with params
-        db.query(`INSERT INTO department (name)
+        db.query(`INSERT INTO department (dep_name)
         VALUES(?)`, param, (err)=> {
             if(err){
                 throw err;
